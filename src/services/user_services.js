@@ -1,59 +1,89 @@
-const mongo = require('./_access')
-const { ObjectId } = require('mongodb');
+const mongo = require("./_access");
+const { ObjectId } = require("mongodb");
+
+const DB = "contact-list";
+const COLLECTION = "users";
 
 /**
- * 
- * @param {*} user 
- * @returns 
+ *
+ * @param {*} user
+ * @returns
  */
-async function create (user) {
-    const db = await mongo.connect()
-    let document = {}
-    user.password = await bcrypt.hash(user.password,10)
-    try {
-         document = await db
-            .db('simple-node-application')
-            .collection('users')
-            .insertOne(user)
-    }
-    catch (err) {
-        console.error(err)
-    }
-    return getById(document.insertedId.toString());
+async function create(user) {
+  const db = await mongo.connect();
+
+  const document = await db.db(DB).collection(COLLECTION).insertOne(user);
+
+  return document;
 }
 
 /**
- * 
- * @param {*} id 
- * @returns 
+ *
+ *
+ * @param {*} user
+ * @return {*}
  */
-async function  getById (id) {
-    const db = await mongo.connect()
-    const document = await db
-        .db('simple-node-application')
-        .collection('users')
-        .findOne({_id: ObjectId(id)})
-        delete document.password
-    return document
+const edit = async (params, user) => {
+  const db = await mongo.connect();
+
+  //removes keys with undefined value
+  Object.keys(user).forEach((key) => user[key] ?? delete user[key]);
+
+  const document = await db
+    .db(DB)
+    .collection(COLLECTION)
+    .updateOne({ _id: ObjectId(params.id) }, { $set: user });
+
+  return document;
+};
+
+/**
+ *
+ * @param {*} id
+ * @returns
+ */
+async function getById(id) {
+  const db = await mongo.connect();
+
+  const document = await db
+    .db(DB)
+    .collection(COLLECTION)
+    .findOne({ _id: ObjectId(id) });
+
+  return document;
 }
 
 /**
- * 
- * @param {*} id 
- * @returns 
+ *
+ * @param {*} id
  */
-async function  getByEmail (email) {
-    const db = await mongo.connect()
-    const document = await db
-        .db('simple-node-application')
-        .collection('users')
-        .findOne({email: email})
-    return document
+async function remove(id) {
+  const db = await mongo.connect();
+  const document = await db
+    .db(DB)
+    .collection(COLLECTION)
+    .deleteOne({ _id: ObjectId(id) });
+
+  return document;
 }
 
-module.exports= {
-    create,
-    getById,
-    getByEmail
+/**
+ *
+ * @param {*} id
+ * @returns
+ */
+async function getAll(id) {
+  const db = await mongo.connect();
 
+  const document = await db.db(DB).collection(COLLECTION).find({}).toArray();
+
+  return document;
 }
+
+module.exports = {
+  create,
+  edit,
+  getById,
+  remove,
+  getAll,
+};
